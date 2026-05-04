@@ -39,7 +39,7 @@ body {
 
 .panel {
   pointer-events: none;
-  max-width: min(420px, 92vw);
+  max-width: min(460px, 92vw);
 }
 
 .hero {
@@ -65,13 +65,10 @@ body {
 
 h1 {
   margin: 0;
-  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-size: clamp(1.15rem, 2.8vw, 1.55rem);
   font-weight: 600;
   letter-spacing: -0.02em;
-}
-
-.dot {
-  color: #6ee7ff;
+  line-height: 1.25;
 }
 
 .sub {
@@ -79,6 +76,13 @@ h1 {
   font-size: 13px;
   line-height: 1.45;
   color: rgba(200, 210, 235, 0.85);
+}
+
+.note {
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(170, 188, 220, 0.65);
 }
 
 .loading {

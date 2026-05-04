@@ -2,7 +2,9 @@ import './style.css';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+
+/** Caps GPU load on laptops (big GLB + HDPI melts integrated graphics). */
+const MAX_PIXEL_RATIO = 1.25;
 
 const canvas = document.querySelector('#c');
 const loadingEl = document.querySelector('#loading');
@@ -12,17 +14,16 @@ const loadingDetail = document.querySelector('#loading-detail');
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
-  antialias: true,
+  antialias: false,
   alpha: false,
   powerPreference: 'high-performance',
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = false;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x07080d);
@@ -43,45 +44,29 @@ controls.minDistance = 0.05;
 controls.maxDistance = 80;
 controls.target.set(0, 0.4, 0);
 
-const gen = new THREE.PMREMGenerator(renderer);
-scene.environment = gen.fromScene(new RoomEnvironment(renderer), 0.04).texture;
-gen.dispose();
+const ambient = new THREE.AmbientLight(0xd4dcff, 0.45);
+scene.add(ambient);
 
-const key = new THREE.DirectionalLight(0xffffff, 1.05);
-key.position.set(4, 8, 5);
-key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
-key.shadow.camera.near = 0.5;
-key.shadow.camera.far = 40;
-key.shadow.camera.left = -8;
-key.shadow.camera.right = 8;
-key.shadow.camera.top = 8;
-key.shadow.camera.bottom = -8;
+const key = new THREE.DirectionalLight(0xffffff, 1.1);
+key.position.set(5, 10, 6);
 scene.add(key);
 
-const fill = new THREE.DirectionalLight(0xb8c8ff, 0.35);
-fill.position.set(-5, 3, -4);
+const fill = new THREE.DirectionalLight(0xa8b8e8, 0.35);
+fill.position.set(-6, 4, -5);
 scene.add(fill);
 
-const rim = new THREE.HemisphereLight(0x8fb4ff, 0x1a1424, 0.55);
-scene.add(rim);
-
 const ground = new THREE.Mesh(
-  new THREE.CircleGeometry(12, 96),
-  new THREE.MeshStandardMaterial({
-    color: 0x121520,
-    metalness: 0.15,
-    roughness: 0.92,
+  new THREE.CircleGeometry(10, 48),
+  new THREE.MeshLambertMaterial({
+    color: 0x141824,
   })
 );
 ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
 ground.position.y = -0.001;
 scene.add(ground);
 
-const grid = new THREE.GridHelper(24, 48, 0x2a3144, 0x1a2030);
-grid.position.y = 0;
-grid.material.opacity = 0.35;
+const grid = new THREE.GridHelper(20, 20, 0x2a3144, 0x1a2030);
+grid.material.opacity = 0.22;
 grid.material.transparent = true;
 scene.add(grid);
 
@@ -106,10 +91,10 @@ loader.load(
   (gltf) => {
     const root = gltf.scene;
     root.traverse((obj) => {
-      const mesh = obj;
-      if (mesh.isMesh) {
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
+      if (obj.isMesh) {
+        obj.frustumCulled = true;
+        obj.castShadow = false;
+        obj.receiveShadow = false;
       }
     });
 
@@ -131,13 +116,16 @@ loader.load(
     controls.update();
 
     loadingText.textContent = 'Ready';
-    setLoadingProgress(100, 'Use mouse or touch to explore');
+    setLoadingProgress(100, 'Curax system model');
     hideLoading();
   },
   (event) => {
     if (event.lengthComputable) {
       const pct = (event.loaded / event.total) * 100;
-      setLoadingProgress(pct, `${(event.loaded / (1024 * 1024)).toFixed(1)} / ${(event.total / (1024 * 1024)).toFixed(1)} MB`);
+      setLoadingProgress(
+        pct,
+        `${(event.loaded / (1024 * 1024)).toFixed(1)} / ${(event.total / (1024 * 1024)).toFixed(1)} MB`
+      );
     } else {
       setLoadingProgress(50, 'Downloading…');
     }
@@ -145,7 +133,7 @@ loader.load(
   (err) => {
     console.error(err);
     loadingText.textContent = 'Could not load model';
-    loadingDetail.textContent = 'Check that Box.glb is in public/ and redeploy.';
+    loadingDetail.textContent = 'Ensure Box.glb is in public/ and redeploy.';
     barFill.style.background = '#f87171';
   }
 );
@@ -155,6 +143,7 @@ function onResize() {
   const h = window.innerHeight;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO));
   renderer.setSize(w, h);
 }
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Model — Box</title>
+    <title>Curax — 3D system representation</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,21 +16,26 @@
       <canvas id="c"></canvas>
       <div class="chrome">
         <header class="panel hero">
-          <p class="eyebrow">Interactive viewer</p>
-          <h1>Box<span class="dot">.</span>glb</h1>
-          <p class="sub">Drag to orbit · Scroll to zoom · Right-drag to pan</p>
+          <p class="eyebrow">Curax</p>
+          <h1>3D model representation of Curax system</h1>
+          <p class="sub">
+            Drag to orbit · Scroll to zoom · Right-drag to pan
+          </p>
+          <p class="note">
+            Large models load once then stay in memory; close other heavy tabs if this page feels slow.
+          </p>
         </header>
         <div class="panel loading" id="loading" aria-live="polite">
           <div class="loading-row">
             <span class="spinner" aria-hidden="true"></span>
-            <span id="loading-text">Loading model…</span>
+            <span id="loading-text">Loading…</span>
           </div>
           <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
-          <p class="hint" id="loading-detail">Preparing scene</p>
+          <p class="hint" id="loading-detail">Preparing viewer</p>
         </div>
         <footer class="panel foot">
-          <span class="badge">Three.js</span>
-          <span class="muted">Built for static hosting</span>
+          <span class="badge">Curax viewer</span>
+          <span class="muted">Performance mode · Large assets supported</span>
         </footer>
       </div>
     </div>
