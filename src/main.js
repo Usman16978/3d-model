@@ -9,8 +9,7 @@ const MAX_PIXEL_RATIO = 1.25;
 const canvas = document.querySelector('#c');
 const loadingEl = document.querySelector('#loading');
 const barFill = document.querySelector('#bar-fill');
-const loadingText = document.querySelector('#loading-text');
-const loadingDetail = document.querySelector('#loading-detail');
+const loadErr = document.querySelector('#load-err');
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -70,14 +69,14 @@ grid.material.opacity = 0.22;
 grid.material.transparent = true;
 scene.add(grid);
 
-function setLoadingProgress(pct, detail) {
+function setLoadingProgress(pct) {
   const clamped = Math.max(0, Math.min(100, pct));
   barFill.style.width = `${clamped}%`;
-  if (detail) loadingDetail.textContent = detail;
 }
 
 function hideLoading() {
   loadingEl.classList.add('done');
+  loadingEl.removeAttribute('aria-busy');
   setTimeout(() => {
     loadingEl.style.display = 'none';
   }, 500);
@@ -115,26 +114,19 @@ loader.load(
     camera.position.set(dist * 0.85, dist * 0.55, dist * 0.95);
     controls.update();
 
-    loadingText.textContent = 'Ready';
-    setLoadingProgress(100, 'Curax system model');
+    setLoadingProgress(100);
     hideLoading();
   },
   (event) => {
     if (event.lengthComputable) {
-      const pct = (event.loaded / event.total) * 100;
-      setLoadingProgress(
-        pct,
-        `${(event.loaded / (1024 * 1024)).toFixed(1)} / ${(event.total / (1024 * 1024)).toFixed(1)} MB`
-      );
-    } else {
-      setLoadingProgress(50, 'Downloading…');
+      setLoadingProgress((event.loaded / event.total) * 100);
     }
   },
   (err) => {
     console.error(err);
-    loadingText.textContent = 'Could not load model';
-    loadingDetail.textContent = 'Ensure Box.glb is in public/ and redeploy.';
+    loadingEl.setAttribute('aria-busy', 'false');
     barFill.style.background = '#f87171';
+    loadErr.hidden = false;
   }
 );
 

@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Curax — 3D system representation</title>
+    <title>Curax — 3D representation</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,500;0,9..40,600&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -16,27 +16,16 @@
       <canvas id="c"></canvas>
       <div class="chrome">
         <header class="panel hero">
-          <p class="eyebrow">Curax</p>
-          <h1>3D model representation of Curax system</h1>
-          <p class="sub">
-            Drag to orbit · Scroll to zoom · Right-drag to pan
-          </p>
-          <p class="note">
-            Large models load once then stay in memory; close other heavy tabs if this page feels slow.
-          </p>
+          <p class="title-line">3D model representation</p>
+          <p class="title-line">of Curax system</p>
         </header>
-        <div class="panel loading" id="loading" aria-live="polite">
+        <div class="panel loading" id="loading" aria-live="polite" aria-busy="true">
           <div class="loading-row">
             <span class="spinner" aria-hidden="true"></span>
-            <span id="loading-text">Loading…</span>
           </div>
           <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
-          <p class="hint" id="loading-detail">Preparing viewer</p>
+          <p class="load-err" id="load-err" hidden>Could not load model.</p>
         </div>
-        <footer class="panel foot">
-          <span class="badge">Curax viewer</span>
-          <span class="muted">Performance mode · Large assets supported</span>
-        </footer>
       </div>
     </div>
     <script type="module" src="/src/main.js"></script>
