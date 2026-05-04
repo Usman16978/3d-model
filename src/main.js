@@ -6,6 +6,26 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 /** Caps GPU load on laptops (big GLB + HDPI melts integrated graphics). */
 const MAX_PIXEL_RATIO = 1.25;
 
+/**
+ * Playback order for the full on-box demo (indices into `gltf.animations`).
+ * Empty array = use every clip in GLB order (0 → 1 → …).
+ * Reorder here to match your Curax story (boot → PIN → readings, etc.).
+ */
+const CURAX_STORY_CLIP_INDICES = [];
+
+/** Pause between chained clips (ms). */
+const AUTO_STORY_GAP_MS = 200;
+
+/** After the last clip, restart from the first (kiosk-style). Set false to stop on last frame. */
+const AUTO_STORY_LOOP = true;
+
+const clock = new THREE.Clock();
+let mixer = null;
+let clips = [];
+let storyOrder = [];
+let storyOrderIdx = 0;
+let storyFinishedHandler = null;
+
 const canvas = document.querySelector('#c');
 const loadingEl = document.querySelector('#loading');
 const barFill = document.querySelector('#bar-fill');
@@ -82,6 +102,70 @@ function hideLoading() {
   }, 500);
 }
 
+function playClipIndex(index) {
+  if (!mixer || index < 0 || index >= clips.length) return null;
+  const clip = clips[index];
+  mixer.stopAllAction();
+  const action = mixer.clipAction(clip);
+  action.reset();
+  action.setLoop(THREE.LoopOnce, 1);
+  action.clampWhenFinished = true;
+  action.play();
+  return action;
+}
+
+function playStoryClipAtOrderIndex(orderPos) {
+  if (!storyOrder.length) return;
+  const wrap = orderPos % storyOrder.length;
+  const clipIdx = storyOrder[wrap];
+  if (clipIdx < 0 || clipIdx >= clips.length) return;
+  playClipIndex(clipIdx);
+}
+
+function advanceAutoStory() {
+  if (!storyOrder.length || !mixer) return;
+
+  if (storyOrderIdx >= storyOrder.length) {
+    if (!AUTO_STORY_LOOP) return;
+    storyOrderIdx = 0;
+  }
+
+  playStoryClipAtOrderIndex(storyOrderIdx);
+  storyOrderIdx += 1;
+
+  if (!AUTO_STORY_LOOP && storyOrderIdx >= storyOrder.length) {
+    return;
+  }
+}
+
+function setupAutoStory(root, animations) {
+  clips = animations;
+  if (!animations.length) return;
+
+  mixer = new THREE.AnimationMixer(root);
+
+  const filtered =
+    CURAX_STORY_CLIP_INDICES.length > 0
+      ? CURAX_STORY_CLIP_INDICES.filter((i) => i >= 0 && i < animations.length)
+      : animations.map((_, i) => i);
+
+  storyOrder = filtered.length ? filtered : animations.map((_, i) => i);
+  storyOrderIdx = 0;
+
+  if (storyFinishedHandler) {
+    mixer.removeEventListener('finished', storyFinishedHandler);
+  }
+  storyFinishedHandler = () => {
+    if (!AUTO_STORY_LOOP && storyOrderIdx >= storyOrder.length) {
+      return;
+    }
+    window.setTimeout(() => advanceAutoStory(), AUTO_STORY_GAP_MS);
+  };
+  mixer.addEventListener('finished', storyFinishedHandler);
+
+  advanceAutoStory();
+}
+
 const loader = new GLTFLoader();
 loader.setPath(import.meta.env.BASE_URL);
 
@@ -114,6 +198,8 @@ loader.load(
     camera.position.set(dist * 0.85, dist * 0.55, dist * 0.95);
     controls.update();
 
+    setupAutoStory(root, gltf.animations || []);
+
     setLoadingProgress(100);
     hideLoading();
   },
@@ -143,6 +229,8 @@ window.addEventListener('resize', onResize);
 
 function tick() {
   requestAnimationFrame(tick);
+  const dt = clock.getDelta();
+  if (mixer) mixer.update(dt);
   controls.update();
   renderer.render(scene, camera);
 }
