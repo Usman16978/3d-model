@@ -81,12 +81,13 @@ const ground = new THREE.Mesh(
   })
 );
 ground.rotation.x = -Math.PI / 2;
-ground.position.y = -0.001;
+ground.position.y = -0.06;
 scene.add(ground);
 
 const grid = new THREE.GridHelper(20, 20, 0x2a3144, 0x1a2030);
 grid.material.opacity = 0.22;
 grid.material.transparent = true;
+grid.position.y = -0.02;
 scene.add(grid);
 
 function setLoadingProgress(pct) {
@@ -185,16 +186,24 @@ loader.load(
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
 
-    root.position.sub(center);
+    // Sit on the floor: X/Z centered, bottom of mesh just above y=0 — not bounding-sphere center
+    // (centering full bbox puts half the box underground → dark plane “eats” the base).
+    root.position.x -= center.x;
+    root.position.z -= center.z;
+    root.position.y -= box.min.y;
+    root.position.y += 0.02;
+
     scene.add(root);
 
+    box.setFromObject(root);
+    const midY = (box.min.y + box.max.y) / 2;
     const maxDim = Math.max(size.x, size.y, size.z, 0.001);
     const dist = maxDim * 1.8;
     camera.near = Math.max(0.001, maxDim / 200);
     camera.far = Math.max(100, maxDim * 40);
     camera.updateProjectionMatrix();
 
-    controls.target.set(0, size.y * 0.25, 0);
+    controls.target.set(0, midY, 0);
     camera.position.set(dist * 0.85, dist * 0.55, dist * 0.95);
     controls.update();
 
