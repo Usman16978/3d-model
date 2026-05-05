@@ -146,3 +146,77 @@ body {
 .load-err[hidden] {
   display: none !important;
 }
+
+.bind-panel {
+  pointer-events: auto;
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  max-width: min(380px, 96vw);
+  z-index: 2;
+  padding: 0;
+  border-radius: 10px;
+  background: rgba(8, 10, 18, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e8ecf5;
+  font-size: 11px;
+}
+
+.bind-panel[hidden] {
+  display: none !important;
+}
+
+.bind-summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-weight: 600;
+  list-style-position: outside;
+  user-select: none;
+}
+
+.bind-summary::-webkit-details-marker {
+  margin-right: 8px;
+}
+
+.bind-body {
+  padding: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bind-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.bind-row.bind-keys {
+  gap: 4px;
+}
+
+.bind-label {
+  flex: 0 0 44px;
+  color: rgba(180, 196, 230, 0.85);
+  font-weight: 600;
+}
+
+.bind-panel button {
+  font: 10px/1 'DM Sans', system-ui, sans-serif;
+  font-weight: 600;
+  padding: 5px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(34, 211, 238, 0.1);
+  color: #c5f6ff;
+  cursor: pointer;
+}
+
+.bind-panel button:hover {
+  background: rgba(34, 211, 238, 0.2);
+}
+
+.bind-panel button:active {
+  transform: scale(0.97);
+}

@@ -26,6 +26,45 @@
           <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
           <p class="load-err" id="load-err" hidden>Could not load model.</p>
         </div>
+        <details id="curax-bindings" class="bind-panel" hidden>
+          <summary class="bind-summary">Curax bindings</summary>
+          <div class="bind-body">
+            <div class="bind-row">
+              <span class="bind-label">Power</span>
+              <button type="button" data-curax="power">Toggle</button>
+            </div>
+            <div class="bind-row">
+              <span class="bind-label">LCD</span>
+              <button type="button" data-curax="init">Initializing</button>
+              <button type="button" data-curax="ready">System ready</button>
+              <button type="button" data-curax="pin">Enter PIN</button>
+              <button type="button" data-curax="stars">PIN *</button>
+              <button type="button" data-curax="readings">Temp / RH</button>
+            </div>
+            <div class="bind-row">
+              <span class="bind-label">Bay</span>
+              <button type="button" data-curax-comp="0">1</button>
+              <button type="button" data-curax-comp="1">2</button>
+              <button type="button" data-curax-comp="2">3</button>
+              <button type="button" data-curax-comp="3">4</button>
+              <button type="button" data-curax-comp="4">5</button>
+              <button type="button" data-curax-comp="5">6</button>
+            </div>
+            <div class="bind-row bind-keys">
+              <span class="bind-label">Keys</span>
+              <button type="button" data-curax-key="1">1</button>
+              <button type="button" data-curax-key="2">2</button>
+              <button type="button" data-curax-key="3">3</button>
+              <button type="button" data-curax-key="4">4</button>
+              <button type="button" data-curax-key="5">5</button>
+              <button type="button" data-curax-key="6">6</button>
+              <button type="button" data-curax-key="7">7</button>
+              <button type="button" data-curax-key="8">8</button>
+              <button type="button" data-curax-key="9">9</button>
+              <button type="button" data-curax-key="0">0</button>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
     <script type="module" src="/src/main.js"></script>

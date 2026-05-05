@@ -2,22 +2,16 @@ import './style.css';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {
+  CURAX_ANIM_MAP,
+  CURAX_AUTO_DEMO_ALL_CLIPS,
+} from './curaxAnimMap.js';
 
 /** Caps GPU load on laptops (big GLB + HDPI melts integrated graphics). */
 const MAX_PIXEL_RATIO = 1.25;
 
-/**
- * Playback order for the full on-box demo (indices into `gltf.animations`).
- * Empty array = use every clip in GLB order (0 → 1 → …).
- * Reorder here to match your Curax story (boot → PIN → readings, etc.).
- */
-const CURAX_STORY_CLIP_INDICES = [];
-
-/** Pause between chained clips (ms). */
+/** Pause between chained clips in auto-demo mode (ms). */
 const AUTO_STORY_GAP_MS = 200;
-
-/** After the last clip, restart from the first (kiosk-style). Set false to stop on last frame. */
-const AUTO_STORY_LOOP = true;
 
 const clock = new THREE.Clock();
 let mixer = null;
@@ -25,6 +19,7 @@ let clips = [];
 let storyOrder = [];
 let storyOrderIdx = 0;
 let storyFinishedHandler = null;
+let poweredOn = false;
 
 const canvas = document.querySelector('#c');
 const loadingEl = document.querySelector('#loading');
@@ -104,7 +99,9 @@ function hideLoading() {
 }
 
 function playClipIndex(index) {
-  if (!mixer || index < 0 || index >= clips.length) return null;
+  if (!mixer || index == null || index < 0 || index >= clips.length) {
+    return null;
+  }
   const clip = clips[index];
   mixer.stopAllAction();
   const action = mixer.clipAction(clip);
@@ -113,6 +110,110 @@ function playClipIndex(index) {
   action.clampWhenFinished = true;
   action.play();
   return action;
+}
+
+/** Play one semantic clip from CURAX_ANIM_MAP (used by buttons + external hosts). */
+function curaxPlayIndex(mapKey, compartmentSlot = null) {
+  let idx = null;
+  if (mapKey === 'compartment' && compartmentSlot != null) {
+    const arr = CURAX_ANIM_MAP.compartments;
+    if (Array.isArray(arr) && arr[compartmentSlot] != null) {
+      idx = arr[compartmentSlot];
+    }
+  } else if (mapKey in CURAX_ANIM_MAP && mapKey !== 'compartments') {
+    idx = CURAX_ANIM_MAP[mapKey];
+  }
+  if (idx == null) {
+    console.warn('[Curax3D] No clip mapped for:', mapKey, compartmentSlot);
+    return null;
+  }
+  return playClipIndex(idx);
+}
+
+function curaxTogglePower() {
+  poweredOn = !poweredOn;
+  const keyOn = poweredOn ? 'powerOn' : 'powerOff';
+  const idx = CURAX_ANIM_MAP[keyOn];
+  if (!poweredOn && idx == null) {
+    poweredOn = true;
+    console.warn('[Curax3D] powerOff not mapped; ignoring toggle off.');
+    return null;
+  }
+  return curaxPlayIndex(keyOn);
+}
+
+function curaxKeypadDigit() {
+  return curaxPlayIndex('screenPinStars');
+}
+
+function setupBindingUi() {
+  const panel = document.querySelector('#curax-bindings');
+  if (!panel) return;
+  panel.hidden = false;
+
+  panel.querySelector('[data-curax="power"]').addEventListener('click', () => {
+    curaxTogglePower();
+  });
+  panel.querySelector('[data-curax="init"]').addEventListener('click', () => {
+    curaxPlayIndex('screenInitializing');
+  });
+  panel.querySelector('[data-curax="ready"]').addEventListener('click', () => {
+    curaxPlayIndex('screenSystemReady');
+  });
+  panel.querySelector('[data-curax="pin"]').addEventListener('click', () => {
+    curaxPlayIndex('screenEnterPin');
+  });
+  panel.querySelector('[data-curax="stars"]').addEventListener('click', () => {
+    curaxPlayIndex('screenPinStars');
+  });
+  panel.querySelector('[data-curax="readings"]').addEventListener('click', () => {
+    curaxPlayIndex('screenReadings');
+  });
+
+  panel.querySelectorAll('[data-curax-comp]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const slot = Number.parseInt(btn.getAttribute('data-curax-comp'), 10);
+      curaxPlayIndex('compartment', slot);
+    });
+  });
+
+  panel.querySelectorAll('[data-curax-key]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      curaxKeypadDigit();
+    });
+  });
+}
+
+function setupAutoStory(root, animations) {
+  clips = animations;
+  if (!animations.length) return;
+
+  mixer = new THREE.AnimationMixer(root);
+
+  console.table(
+    animations.map((c, i) => ({
+      index: i,
+      name: c.name,
+      durationSec: Number(c.duration.toFixed(3)),
+    }))
+  );
+
+  if (!CURAX_AUTO_DEMO_ALL_CLIPS) {
+    setupBindingUi();
+    return;
+  }
+
+  storyOrder = animations.map((_, i) => i);
+  storyOrderIdx = 0;
+
+  if (storyFinishedHandler) {
+    mixer.removeEventListener('finished', storyFinishedHandler);
+  }
+  storyFinishedHandler = () => {
+    window.setTimeout(() => advanceAutoStory(), AUTO_STORY_GAP_MS);
+  };
+  mixer.addEventListener('finished', storyFinishedHandler);
+  advanceAutoStory();
 }
 
 function playStoryClipAtOrderIndex(orderPos) {
@@ -125,46 +226,8 @@ function playStoryClipAtOrderIndex(orderPos) {
 
 function advanceAutoStory() {
   if (!storyOrder.length || !mixer) return;
-
-  if (storyOrderIdx >= storyOrder.length) {
-    if (!AUTO_STORY_LOOP) return;
-    storyOrderIdx = 0;
-  }
-
   playStoryClipAtOrderIndex(storyOrderIdx);
-  storyOrderIdx += 1;
-
-  if (!AUTO_STORY_LOOP && storyOrderIdx >= storyOrder.length) {
-    return;
-  }
-}
-
-function setupAutoStory(root, animations) {
-  clips = animations;
-  if (!animations.length) return;
-
-  mixer = new THREE.AnimationMixer(root);
-
-  const filtered =
-    CURAX_STORY_CLIP_INDICES.length > 0
-      ? CURAX_STORY_CLIP_INDICES.filter((i) => i >= 0 && i < animations.length)
-      : animations.map((_, i) => i);
-
-  storyOrder = filtered.length ? filtered : animations.map((_, i) => i);
-  storyOrderIdx = 0;
-
-  if (storyFinishedHandler) {
-    mixer.removeEventListener('finished', storyFinishedHandler);
-  }
-  storyFinishedHandler = () => {
-    if (!AUTO_STORY_LOOP && storyOrderIdx >= storyOrder.length) {
-      return;
-    }
-    window.setTimeout(() => advanceAutoStory(), AUTO_STORY_GAP_MS);
-  };
-  mixer.addEventListener('finished', storyFinishedHandler);
-
-  advanceAutoStory();
+  storyOrderIdx = (storyOrderIdx + 1) % storyOrder.length;
 }
 
 const loader = new GLTFLoader();
@@ -186,8 +249,6 @@ loader.load(
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
 
-    // Sit on the floor: X/Z centered, bottom of mesh just above y=0 — not bounding-sphere center
-    // (centering full bbox puts half the box underground → dark plane “eats” the base).
     root.position.x -= center.x;
     root.position.z -= center.z;
     root.position.y -= box.min.y;
@@ -224,6 +285,14 @@ loader.load(
     loadErr.hidden = false;
   }
 );
+
+window.Curax3D = {
+  map: CURAX_ANIM_MAP,
+  playClip: playClipIndex,
+  play: curaxPlayIndex,
+  togglePower: curaxTogglePower,
+  keypadDigit: curaxKeypadDigit,
+};
 
 function onResize() {
   const w = window.innerWidth;
