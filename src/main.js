@@ -41,11 +41,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1;
+renderer.toneMappingExposure = 1.08;
 renderer.shadowMap.enabled = false;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x07080d);
+scene.background = new THREE.Color(0xeef2fa);
 
 const camera = new THREE.PerspectiveCamera(
   42,
@@ -63,32 +63,23 @@ controls.minDistance = 0.05;
 controls.maxDistance = 80;
 controls.target.set(0, 0.4, 0);
 
-const ambient = new THREE.AmbientLight(0xd4dcff, 0.45);
+const hemi = new THREE.HemisphereLight(0xffffff, 0xd4dce8, 0.82);
+scene.add(hemi);
+
+const ambient = new THREE.AmbientLight(0xf5f7fb, 0.38);
 scene.add(ambient);
 
-const key = new THREE.DirectionalLight(0xffffff, 1.1);
-key.position.set(5, 10, 6);
+const key = new THREE.DirectionalLight(0xffffff, 0.88);
+key.position.set(5.5, 10, 6);
 scene.add(key);
 
-const fill = new THREE.DirectionalLight(0xa8b8e8, 0.35);
-fill.position.set(-6, 4, -5);
+const fill = new THREE.DirectionalLight(0xe8eef8, 0.42);
+fill.position.set(-6, 5.5, -5);
 scene.add(fill);
 
-const ground = new THREE.Mesh(
-  new THREE.CircleGeometry(10, 48),
-  new THREE.MeshLambertMaterial({
-    color: 0x141824,
-  })
-);
-ground.rotation.x = -Math.PI / 2;
-ground.position.y = -0.06;
-scene.add(ground);
-
-const grid = new THREE.GridHelper(20, 20, 0x2a3144, 0x1a2030);
-grid.material.opacity = 0.22;
-grid.material.transparent = true;
-grid.position.y = -0.02;
-scene.add(grid);
+const rim = new THREE.DirectionalLight(0xfffaf5, 0.28);
+rim.position.set(-2, 3, -8);
+scene.add(rim);
 
 function setLoadingProgress(pct) {
   const clamped = Math.max(0, Math.min(100, pct));
